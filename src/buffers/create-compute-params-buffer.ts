@@ -1,11 +1,47 @@
+import type { BoundaryCondition } from "../utils/initial-conditions";
+
 type CreateComputeParamsBufferProps = {
   device: GPUDevice;
   params: {
     r: number;
+    lambda: number;
     N: number;
-    TL: number;
-    TR: number;
+    dx: number;
+    leftBoundary: BoundaryCondition;
+    rightBoundary: BoundaryCondition;
   };
+};
+
+const writeBoundaryCondition = (
+  floatData: Float32Array,
+  offset: number,
+  boundary: BoundaryCondition,
+) => {
+  switch (boundary.type) {
+    // Граничное условие 1-го рода
+    case 1:
+      floatData[offset] = boundary.T;
+      floatData[offset + 1] = 0;
+      floatData[offset + 2] = 0;
+      floatData[offset + 3] = 0;
+      break;
+
+    // Граничное условие 2-го рода
+    case 2:
+      floatData[offset] = 0;
+      floatData[offset + 1] = boundary.q;
+      floatData[offset + 2] = 0;
+      floatData[offset + 3] = 0;
+      break;
+
+    // Граничное условие 3-го рода
+    case 3:
+      floatData[offset] = 0;
+      floatData[offset + 1] = 0;
+      floatData[offset + 2] = boundary.h;
+      floatData[offset + 3] = boundary.Tinf;
+      break;
+  }
 };
 
 export const createComputeParamsBuffer = ({
@@ -13,18 +49,28 @@ export const createComputeParamsBuffer = ({
   params,
 }: CreateComputeParamsBufferProps) => {
   const computeParamsBuffer = device.createBuffer({
-    size: 4 * Float32Array.BYTES_PER_ELEMENT,
+    size: 64,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
-  const data = new ArrayBuffer(4 * Float32Array.BYTES_PER_ELEMENT);
+  const data = new ArrayBuffer(64);
   const floatData = new Float32Array(data);
   const uintData = new Uint32Array(data);
 
-  floatData[0] = params.r;
-  uintData[1] = params.N;
-  floatData[2] = params.TL;
-  floatData[3] = params.TR;
+  // Общие параметры
+  uintData[0] = params.N;
+  uintData[1] = params.leftBoundary.type;
+  uintData[2] = params.rightBoundary.type;
+
+  floatData[3] = params.r;
+  floatData[4] = params.dx;
+  floatData[5] = params.lambda;
+
+  // Левая граница
+  writeBoundaryCondition(floatData, 6, params.leftBoundary);
+
+  // Правая граница
+  writeBoundaryCondition(floatData, 10, params.rightBoundary);
 
   device.queue.writeBuffer(computeParamsBuffer, 0, data);
 

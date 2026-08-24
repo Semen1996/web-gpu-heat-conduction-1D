@@ -7,13 +7,15 @@ import { createLabel } from "./helpers/create-label";
 import {
   color,
   dt,
+  dx,
   initialTemperature,
+  lambda,
+  leftBoundary,
   N,
   r,
+  rightBoundary,
   t,
   tEnd,
-  TL,
-  TR,
   VIEWPORT,
 } from "./utils/initial-conditions";
 import { createTemperatureBuffer } from "./buffers/create-temperature-buffer";
@@ -34,16 +36,20 @@ async function run() {
       device,
       initialTemperature,
     });
+
     const { temperatureBuffer: temperatureBufferB } = createTemperatureBuffer({
       device,
       initialTemperature,
     });
+
     const { computeParamsBuffer } = createComputeParamsBuffer({
       device,
       params: {
         r,
-        TL,
-        TR,
+        lambda: lambda,
+        dx: dx,
+        leftBoundary,
+        rightBoundary,
         N,
       },
     });

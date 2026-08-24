@@ -1,8 +1,21 @@
 struct Params {
-    r: f32,
     N: u32,
-    TL: f32,
-    TR: f32,
+    leftType: u32,
+    rightType: u32,
+
+    r: f32,
+    dx: f32,
+    lambda: f32,
+
+    leftT: f32,
+    leftQ: f32,
+    leftH: f32,
+    leftTinf: f32,
+
+    rightT: f32,
+    rightQ: f32,
+    rightH: f32,
+    rightTinf: f32,
 };
 
 @group(0) @binding(0)
@@ -27,33 +40,114 @@ fn main(
         return;
     }
 
-    // Граничные условия 1-го рода
+    // ============================================================
+    // ЛЕВАЯ ГРАНИЦА
+    // ============================================================
 
     if (i == 0u) {
-        temperatureOut[i] = params.TL;
+
+        // --------------------------------------------------------
+        // Условие 1-го рода:
+        //
+        // T(0, t) = TL
+        // --------------------------------------------------------
+
+        if (params.leftType == 1u) {
+            temperatureOut[i] = params.leftT;
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Условие 2-го рода:
+        //
+        // -lambda * dT/dx = q
+        //
+        // dT/dx ≈ (T1 - T0) / (dx)
+        // --------------------------------------------------------
+
+        if (params.leftType == 2u) {
+            let T1 = temperatureIn[1u];
+            temperatureOut[i] = T1 + params.dx * params.leftQ / params.lambda;
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Условие 3-го рода:
+        //
+        // -lambda * dT/dx =
+        // h * (Tinf - T)
+        //
+        // --------------------------------------------------------
+
+        if (params.leftType == 3u) {
+            let T1 = temperatureIn[1u];
+            let Bi1 = params.leftH * params.dx / params.lambda;
+
+            temperatureOut[i] = 1 / ( 1 + Bi1 ) * T1 + Bi1 / (1 + Bi1) * params.leftTinf;
+            return;
+        }
+
         return;
     }
+
+
+    // ============================================================
+    // ПРАВАЯ ГРАНИЦА
+    // ============================================================
 
     if (i == params.N - 1u) {
-        temperatureOut[i] = params.TR;
+
+        // --------------------------------------------------------
+        // Условие 1-го рода:
+        //
+        // T(L, t) = TR
+        // --------------------------------------------------------
+
+        if (params.rightType == 1u) {
+            temperatureOut[i] = params.rightT;
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Условие 2-го рода:
+        //
+        // -lambda * dT/dx = q
+        //
+        // dT/dx ≈
+        // (3TN - 4TN-1 + TN-2) / (2dx)
+        // --------------------------------------------------------
+
+        if (params.rightType == 2u) {
+            let T1 = temperatureIn[params.N - 2u];
+            temperatureOut[i] = T1 - params.dx * params.rightQ / params.lambda;
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Условие 3-го рода:
+        //
+        // -lambda * dT/dx =
+        // h * (Tinf - T)
+        // --------------------------------------------------------
+
+        if (params.rightType == 3u) {
+            let T1 = temperatureIn[params.N - 2u];
+            let Bi2 = params.leftH * params.dx / params.lambda;
+            temperatureOut[i] = 1 / ( 1 + Bi2 ) * T1 + Bi2 / ( 1 + Bi2 ) * params.rightTinf;
+            return;
+        }
+
         return;
     }
 
-    let T_left =
-        temperatureIn[i - 1u];
 
-    let T_current =
-        temperatureIn[i];
+    // ============================================================
+    // ВНУТРЕННИЕ УЗЛЫ
+    // ============================================================
 
-    let T_right =
-        temperatureIn[i + 1u];
+    let T_left = temperatureIn[i - 1u];
+    let T_current = temperatureIn[i];
+    let T_right = temperatureIn[i + 1u];
 
-    temperatureOut[i] =
-        T_current +
-        params.r *
-        (
-            T_left
-            - 2.0 * T_current
-            + T_right
-        );
+    temperatureOut[i] =  T_current + params.r * ( T_left - 2.0 * T_current + T_right );
 }
