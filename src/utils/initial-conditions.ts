@@ -9,7 +9,7 @@ export type BoundaryCondition =
     }
   | {
       type: 3;
-      h: number; // коэффициент теплоотдачи
+      k: number; // коэффициент теплоотдачи
       Tinf: number; // температура окружающей среды
     };
 
@@ -39,12 +39,12 @@ export const leftBoundary: BoundaryCondition = {
   type: 3,
   // T: 300, // левое граничное условие (градус Цельсия)
   Tinf: -30,
-  h: 1000,
+  k: 1000,
 };
 
 export const rightBoundary: BoundaryCondition = {
   type: 3,
-  h: 500,
+  k: 500,
   Tinf: 10,
 };
 

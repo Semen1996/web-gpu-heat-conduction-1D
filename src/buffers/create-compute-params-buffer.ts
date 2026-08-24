@@ -38,7 +38,7 @@ const writeBoundaryCondition = (
     case 3:
       floatData[offset] = 0;
       floatData[offset + 1] = 0;
-      floatData[offset + 2] = boundary.h;
+      floatData[offset + 2] = boundary.k;
       floatData[offset + 3] = boundary.Tinf;
       break;
   }
