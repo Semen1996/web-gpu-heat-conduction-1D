@@ -1,13 +1,13 @@
 type CreateBindGroupProps = {
   device: GPUDevice;
   pipeline: GPURenderPipeline;
-  mvpBuffer: GPUBuffer;
+  colorBuffer: GPUBuffer;
 };
 
 export const createBindGroup = ({
   device,
   pipeline,
-  mvpBuffer,
+  colorBuffer,
 }: CreateBindGroupProps) => {
   const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
@@ -15,7 +15,7 @@ export const createBindGroup = ({
       {
         binding: 0,
         resource: {
-          buffer: mvpBuffer,
+          buffer: colorBuffer,
         },
       },
     ],

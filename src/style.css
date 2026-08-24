@@ -1,12 +1,25 @@
 body {
   margin: 0;
   height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(188, 188, 188);
 }
 
-.container {
+.plot {
   position: relative;
   width: 800px;
   height: 600px;
+  border-left: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+.labels {
+  position: absolute;
+  inset: 0;
+  bottom: 0;
+  pointer-events: none;
 }
 
 canvas {

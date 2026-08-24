@@ -1,11 +1,13 @@
 import vertexCode from "./shaders/position.vert.wgsl?raw";
 import fragmentCode from "./shaders/color.frag.wgsl?raw";
 
-type InitPipelineProps = {
+type InitRenderPipelineProps = {
   device: GPUDevice;
 };
 
-export const initPipeline = async ({ device }: InitPipelineProps) => {
+export const initRenderPipeline = async ({
+  device,
+}: InitRenderPipelineProps) => {
   const vertexShader = device.createShaderModule({ code: vertexCode });
   const fragmentShader = device.createShaderModule({ code: fragmentCode });
 
@@ -15,18 +17,7 @@ export const initPipeline = async ({ device }: InitPipelineProps) => {
     vertex: {
       module: vertexShader,
       entryPoint: "main",
-      buffers: [
-        {
-          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT, // 1 вершина состоит из 3 координат по 4 байта
-          attributes: [
-            {
-              shaderLocation: 0,
-              offset: 0,
-              format: "float32x3",
-            },
-          ],
-        },
-      ],
+      buffers: [],
     },
 
     fragment: {
@@ -41,10 +32,9 @@ export const initPipeline = async ({ device }: InitPipelineProps) => {
     },
 
     primitive: {
-      topology: "triangle-list",
-      cullMode: "back",
+      topology: "line-strip",
     },
   });
 
-  return { pipeline };
+  return { renderPipeline: pipeline };
 };

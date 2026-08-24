@@ -1,65 +1,149 @@
 import "./style.css";
-import { initPipeline } from "./init-pipeline";
+import { initRenderPipeline } from "./init-render-pipeline";
 import { initWebGPU } from "./init-webgpu";
 
-import { draw } from "./draw";
-import { createVertexBuffer } from "./create-vertex-buffer";
-import { vertices, verticesCount } from "./utils/cube";
-import { createBindGroup } from "./create-bind-group";
-import { createMVPBuffer } from "./create-mvp-buffer";
-import { animateCube } from "./animate-cube";
-
-const position = { x: 0, y: 0, z: -8 };
-const rotation = { x: 20, y: 30, z: 0 };
-const scale = { x: 1, y: 1, z: 1 };
+import { createColorBuffer } from "./buffers/create-color-buffer";
+import { createLabel } from "./helpers/create-label";
+import {
+  color,
+  dt,
+  initialTemperature,
+  N,
+  r,
+  t,
+  tEnd,
+  TL,
+  TR,
+  VIEWPORT,
+} from "./utils/initial-conditions";
+import { createTemperatureBuffer } from "./buffers/create-temperature-buffer";
+import { createComputeParamsBuffer } from "./buffers/create-compute-params-buffer";
+import { initComputePipeline } from "./init-compute-pipeline";
+import { createComputeBindGroups } from "./create-compute-bind-groups";
+import { createViewportBuffer } from "./buffers/createViewportBuffer";
+import { createRenderBindGroups } from "./createRenderBindGroups";
+import { computeAndRender } from "./computeAndRender";
 
 async function run() {
   try {
-    const { device, context, canvas } = await initWebGPU({
+    const { device, context } = await initWebGPU({
       canvasSelector: "#gfx-main",
     });
 
-    const { vertexBuffer } = createVertexBuffer({ device, vertices: vertices });
-    const { mvpBuffer } = createMVPBuffer({ device });
-
-    const { pipeline } = await initPipeline({
+    const { temperatureBuffer: temperatureBufferA } = createTemperatureBuffer({
       device,
+      initialTemperature,
+    });
+    const { temperatureBuffer: temperatureBufferB } = createTemperatureBuffer({
+      device,
+      initialTemperature,
+    });
+    const { computeParamsBuffer } = createComputeParamsBuffer({
+      device,
+      params: {
+        r,
+        TL,
+        TR,
+        N,
+      },
     });
 
-    const { bindGroup } = createBindGroup({
+    const { viewportBuffer } = createViewportBuffer({
       device,
-      pipeline,
-      mvpBuffer,
+      params: {
+        xMin: VIEWPORT.xMin,
+        xMax: VIEWPORT.xMax,
+        yMin: VIEWPORT.yMin,
+        yMax: VIEWPORT.yMax,
+        N,
+      },
     });
 
-    const drawCallback = () => {
-      draw({
+    const { colorBuffer } = createColorBuffer({ device, color });
+
+    const { computePipeline } = await initComputePipeline({ device });
+    const { computeBindGroupAtoB, computeBindGroupBtoA } =
+      createComputeBindGroups({
         device,
-        context,
-        pipeline,
-        vertexBuffer,
-        bindGroup,
-        countVertex: verticesCount,
+        pipeline: computePipeline,
+        temperatureA: temperatureBufferA,
+        temperatureB: temperatureBufferB,
+        paramsBuffer: computeParamsBuffer,
       });
+
+    const { renderPipeline } = await initRenderPipeline({
+      device,
+    });
+
+    const { renderBindGroupA, renderBindGroupB } = createRenderBindGroups({
+      device,
+      pipeline: renderPipeline,
+      temperatureA: temperatureBufferA,
+      temperatureB: temperatureBufferB,
+      viewportBuffer,
+      colorBuffer,
+    });
+
+    const STEPS_PER_RENDER = 10;
+    const simulation = {
+      t,
+      currentIsA: true,
+      running: true,
     };
 
-    // Рисуем
-    animateCube({
-      size: {
-        width: canvas.width,
-        height: canvas.height,
-      },
-      position: { ...position },
-      rotation: { ...rotation },
-      scale: { ...scale },
-      callback: (mvpMatrix) => {
-        device.queue.writeBuffer(mvpBuffer, 0.1, mvpMatrix);
-        drawCallback();
-      },
-    });
+    function frame() {
+      if (!simulation.running) {
+        return;
+      }
+      computeAndRender({
+        device,
+        context,
+        computePipeline,
+        computeBindGroupAtoB,
+        computeBindGroupBtoA,
+        renderPipeline,
+        renderBindGroupA,
+        renderBindGroupB,
+        N,
+        dt,
+        tEnd,
+        steps: STEPS_PER_RENDER,
+        simulation,
+      });
+
+      if (simulation.running) {
+        requestAnimationFrame(frame);
+      }
+    }
+
+    requestAnimationFrame(frame);
   } catch (error) {
     console.error(error);
   }
 }
 
+function createPlot() {
+  const labelsContainer = document.querySelector("#labels");
+  if (!labelsContainer) {
+    console.error("labels container isn't found");
+    return;
+  }
+
+  createLabel(labelsContainer as HTMLElement, VIEWPORT.xMin.toString(), 0, "x");
+  createLabel(
+    labelsContainer as HTMLElement,
+    VIEWPORT.xMax.toString(),
+    labelsContainer.clientWidth,
+    "x",
+  );
+  createLabel(labelsContainer as HTMLElement, VIEWPORT.yMin.toString(), 0, "y");
+  createLabel(
+    labelsContainer as HTMLElement,
+    VIEWPORT.yMax.toString(),
+    labelsContainer.clientHeight,
+    "y",
+  );
+}
+
+createPlot();
 run();
