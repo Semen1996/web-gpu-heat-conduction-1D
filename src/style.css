@@ -7,9 +7,22 @@ body {
   background-color: rgb(188, 188, 188);
 }
 
+.plot-wrap {
+  display: grid;
+  grid-template-columns: auto max-content;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    "labels-y plot"
+    ". labels-x";
+  box-sizing: border-box;
+  padding: 40px;
+  padding-right: 90px;
+}
+
 .plot {
+  grid-area: plot;
   position: relative;
-  width: 800px;
+  width: 600px;
   height: 600px;
   border-left: 1px solid black;
   border-bottom: 1px solid black;
@@ -20,6 +33,20 @@ body {
   inset: 0;
   bottom: 0;
   pointer-events: none;
+}
+
+.labels-y {
+  grid-area: labels-y;
+  position: relative;
+  width: 50px;
+  height: 100%;
+}
+
+.labels-x {
+  grid-area: labels-x;
+  position: relative;
+  width: 100%;
+  height: 50px;
 }
 
 canvas {
@@ -35,4 +62,11 @@ canvas {
   flex-direction: column;
   align-items: center;
   gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .plot {
+    width: 100%;
+    height: 100%;
+  }
 }

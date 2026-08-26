@@ -3,7 +3,6 @@ import { initRenderPipeline } from "./init-render-pipeline";
 import { initWebGPU } from "./init-webgpu";
 
 import { createColorBuffer } from "./buffers/create-color-buffer";
-import { createLabel } from "./helpers/create-label";
 import {
   color,
   dt,
@@ -25,6 +24,8 @@ import { createComputeBindGroups } from "./create-compute-bind-groups";
 import { createViewportBuffer } from "./buffers/createViewportBuffer";
 import { createRenderBindGroups } from "./createRenderBindGroups";
 import { computeAndRender } from "./computeAndRender";
+import { createLabelX } from "./helpers/create-label-x";
+import { createLabelY } from "./helpers/create-label-y";
 
 async function run() {
   try {
@@ -129,26 +130,10 @@ async function run() {
 }
 
 function createPlot() {
-  const labelsContainer = document.querySelector("#labels");
-  if (!labelsContainer) {
-    console.error("labels container isn't found");
-    return;
-  }
-
-  createLabel(labelsContainer as HTMLElement, VIEWPORT.xMin.toString(), 0, "x");
-  createLabel(
-    labelsContainer as HTMLElement,
-    VIEWPORT.xMax.toString(),
-    labelsContainer.clientWidth,
-    "x",
-  );
-  createLabel(labelsContainer as HTMLElement, VIEWPORT.yMin.toString(), 0, "y");
-  createLabel(
-    labelsContainer as HTMLElement,
-    VIEWPORT.yMax.toString(),
-    labelsContainer.clientHeight,
-    "y",
-  );
+  createLabelX(VIEWPORT.xMin.toString(), "0%");
+  createLabelX(VIEWPORT.xMax.toString(), "100%");
+  createLabelY(VIEWPORT.yMin.toString(), "0%");
+  createLabelY(VIEWPORT.yMax.toString(), "100%");
 }
 
 createPlot();
